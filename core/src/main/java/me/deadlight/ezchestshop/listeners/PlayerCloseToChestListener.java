@@ -105,29 +105,42 @@ public class PlayerCloseToChestListener implements Listener {
         }
 
         Location loc = player.getLocation();
-        List<EzShop> shops = ShopContainer.getShops().stream()
-                .filter(ezShop -> ezShop.getLocation() != null
-                        && loc.getWorld().equals(ezShop.getLocation().getWorld())
-                        && loc.distance(ezShop.getLocation()) < Config.holodistancing_distance + 5)
-                .toList();
-        for (EzShop ezShop : shops) {
+        org.bukkit.World playerWorld = getLoadedWorld(loc);
+        if (playerWorld == null) {
+            return;
+        }
+
+        for (EzShop ezShop : ShopContainer.getShops()) {
+            Location shopLocation = ezShop.getLocation();
+            org.bukkit.World shopWorld = getLoadedWorld(shopLocation);
+            if (shopWorld == null || !playerWorld.equals(shopWorld)) {
+                continue;
+            }
+            double dist;
+            try {
+                dist = loc.distance(shopLocation);
+            } catch (IllegalArgumentException ignored) {
+                continue;
+            }
+            if (dist >= Config.holodistancing_distance + 5) {
+                continue;
+            }
             if (EzChestShop.slimefun) {
-                if (BlockStorage.hasBlockInfo(ezShop.getLocation())) {
-                    ShopContainer.deleteShop(ezShop.getLocation());
+                if (BlockStorage.hasBlockInfo(shopLocation)) {
+                    ShopContainer.deleteShop(shopLocation);
                     continue;
                 }
             }
-            double dist = loc.distance(ezShop.getLocation());
             // Show the Hologram if Player close enough
             if (dist < Config.holodistancing_distance) {
-                if (ShopHologram.hasHologram(ezShop.getLocation(), player))
+                if (ShopHologram.hasHologram(shopLocation, player))
                     continue;
 
-                Block target = ezShop.getLocation().getWorld().getBlockAt(ezShop.getLocation());
+                Block target = shopWorld.getBlockAt(shopLocation);
                 if (!Utils.isApplicableContainer(target)) {
                     return;
                 }
-                ShopHologram shopHolo = ShopHologram.getHologram(ezShop.getLocation(), player);
+                ShopHologram shopHolo = ShopHologram.getHologram(shopLocation, player);
                 if (Config.holodistancing_show_item_first) {
                     shopHolo.showOnlyItem();
                     shopHolo.showAlwaysVisibleText();
@@ -139,7 +152,7 @@ public class PlayerCloseToChestListener implements Listener {
             // Hide the Hologram that is too far away from the player
             else if (dist > Config.holodistancing_distance + 1 && dist < Config.holodistancing_distance + 3) {
                 // Hide the Hologram
-                ShopHologram hologram = ShopHologram.getHologram(ezShop.getLocation(), player);
+                ShopHologram hologram = ShopHologram.getHologram(shopLocation, player);
                 if (hologram != null) {
                     hologram.hide();
                 }
@@ -263,5 +276,16 @@ public class PlayerCloseToChestListener implements Listener {
         return (Math.abs(from.getX() - to.getX()) >= 0.001)
                 || (Math.abs(from.getY() - to.getY()) >= 0.001)
                 || (Math.abs(from.getZ() - to.getZ()) >= 0.001);
+    }
+
+    private org.bukkit.World getLoadedWorld(Location location) {
+        if (location == null) {
+            return null;
+        }
+        try {
+            return location.getWorld();
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 }
