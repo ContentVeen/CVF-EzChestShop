@@ -73,7 +73,7 @@ public class ShopHologram {
             Inventory shopInventory = Utils.getBlockInventory(location.getBlock());
             String ownerName = Bukkit.getOfflinePlayer(shop.getOwnerID()).getName();
             if (shopInventory == null) {
-                World world = Objects.requireNonNullElse(location.getWorld(), player.getWorld());
+                World world = Objects.requireNonNullElse(Utils.getLoadedWorld(location), player.getWorld());
                 Block blockAtLocation = world.getBlockAt(location);
                 // Debugging a specific, unconfirmed, error on Paper 1.21 #130.
                 LOGGER.warn(" *".repeat(16));

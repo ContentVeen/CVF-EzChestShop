@@ -104,14 +104,14 @@ public class PlayerCloseToChestListener implements Listener {
         }
 
         Location loc = player.getLocation();
-        org.bukkit.World playerWorld = getLoadedWorld(loc);
+        org.bukkit.World playerWorld = Utils.getLoadedWorld(loc);
         if (playerWorld == null) {
             return;
         }
 
         for (EzShop ezShop : ShopContainer.getShops()) {
             Location shopLocation = ezShop.getLocation();
-            org.bukkit.World shopWorld = getLoadedWorld(shopLocation);
+            org.bukkit.World shopWorld = Utils.getLoadedWorld(shopLocation);
             if (shopWorld == null || !playerWorld.equals(shopWorld)) {
                 continue;
             }
@@ -277,14 +277,4 @@ public class PlayerCloseToChestListener implements Listener {
                 || (Math.abs(from.getZ() - to.getZ()) >= 0.001);
     }
 
-    private org.bukkit.World getLoadedWorld(Location location) {
-        if (location == null) {
-            return null;
-        }
-        try {
-            return location.getWorld();
-        } catch (IllegalArgumentException ignored) {
-            return null;
-        }
-    }
 }
