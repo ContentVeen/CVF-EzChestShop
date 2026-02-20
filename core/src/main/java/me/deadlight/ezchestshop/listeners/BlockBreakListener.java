@@ -19,6 +19,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
@@ -44,7 +45,9 @@ public class BlockBreakListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL)
     public void onBlockBreak(BlockBreakEvent event) {
         if (Utils.blockBreakMap.containsKey(event.getPlayer().getName())) {
-            Collection<Entity> entityList = event.getBlock().getLocation().getWorld().getNearbyEntities(event.getBlock().getLocation(), 2, 2 ,2);
+            World world = Utils.getLoadedWorld(event.getBlock().getLocation());
+            if (world == null) return;
+            Collection<Entity> entityList = world.getNearbyEntities(event.getBlock().getLocation(), 2, 2 ,2);
 
             for (Entity entity : entityList) {
                 if (entity instanceof Item item && Constants.TAG_CHEST.contains(item.getItemStack().getType())) {
@@ -89,7 +92,10 @@ public class BlockBreakListener implements Listener {
                             container = ShopContainer.copyContainerData(bcontainer, container);
                             meta = addLore(meta, container);
                             shulker.setItemMeta(meta);
-                            loc.getWorld().dropItemNaturally(loc, shulker);
+                            World dropWorld = Utils.getLoadedWorld(loc);
+                            if (dropWorld != null) {
+                                dropWorld.dropItemNaturally(loc, shulker);
+                            }
                             if (Config.holodistancing) {
                                 ShopHologram.hideForAll(event.getBlock().getLocation());
                             }

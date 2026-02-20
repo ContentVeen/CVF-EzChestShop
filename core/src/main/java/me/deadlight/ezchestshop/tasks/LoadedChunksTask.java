@@ -25,7 +25,7 @@ public final class LoadedChunksTask {
         //fix credited to Huke
         for (EzShop shop : ShopContainer.getShops()) {
             Location location = shop.getLocation();
-            World world = location.getWorld();
+            World world = Utils.getLoadedWorld(location);
             int x = location.getBlockX() >> 4;
             int y = location.getBlockZ() >> 4;
 

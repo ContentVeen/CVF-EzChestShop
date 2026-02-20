@@ -208,7 +208,8 @@ public class ShopContainer {
     public static int getShopCount(Player p, World world) {
         return (int) getShopFromOwner(p.getUniqueId()).stream().filter(ezShop -> {
             if (world == null) return false;
-            return world.equals(ezShop.getLocation().getWorld());
+            World shopWorld = Utils.getLoadedWorld(ezShop.getLocation());
+            return world.equals(shopWorld);
         }).count();
     }
 
