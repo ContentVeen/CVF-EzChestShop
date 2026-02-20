@@ -8,7 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import me.deadlight.ezchestshop.EzChestShopConstants;
+import me.deadlight.ezchestshop.Constants;
 import me.deadlight.ezchestshop.data.Config;
 import me.deadlight.ezchestshop.data.LanguageManager;
 import me.deadlight.ezchestshop.data.ShopContainer;
@@ -25,6 +25,7 @@ import org.bukkit.block.ShulkerBox;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.DoubleChestInventory;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
@@ -318,11 +319,11 @@ public class BlockBoundHologram {
             Chest leftChest = (Chest) doubleChest.getLeftSide(false);
             Chest rightChest = (Chest) doubleChest.getRightSide(false);
 
-            if (leftChest != null && leftChest.getPersistentDataContainer().has(EzChestShopConstants.OWNER_KEY, PersistentDataType.STRING)) {
+            if (leftChest != null && leftChest.getPersistentDataContainer().has(Constants.OWNER_KEY, PersistentDataType.STRING)) {
                 return leftChest.getLocation();
             }
 
-            if (rightChest != null && rightChest.getPersistentDataContainer().has(EzChestShopConstants.OWNER_KEY, PersistentDataType.STRING)) {
+            if (rightChest != null && rightChest.getPersistentDataContainer().has(Constants.OWNER_KEY, PersistentDataType.STRING)) {
                 return rightChest.getLocation();
             }
         }
@@ -350,7 +351,7 @@ public class BlockBoundHologram {
             // Get the shulker box inventory
             if (item.getItemMeta() instanceof BlockStateMeta shulkerBlockStateMeta
                     && shulkerBlockStateMeta.getBlockState() instanceof ShulkerBox shulker) {
-                Inventory inv = Bukkit.createInventory(null, 27, "Shulker Box");
+                Inventory inv = Bukkit.createInventory(null, InventoryType.SHULKER_BOX);
                 inv.setContents(shulker.getInventory().getContents());
 
                 // Collect all the item counts into a map and sort them by count

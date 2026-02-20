@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           # 0 indicates all history for all branches and tags.
           fetch-depth: 0
@@ -28,7 +28,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
-          gradle-version: '9.1.0'
+          gradle-version: '9.3.0'
 
       - name: Build with Gradle
         run: |
@@ -37,7 +37,7 @@ jobs:
           echo "SHORT_SHA=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_ENV
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: EzChestShopReborn-${{ env.VERSION }}
           path: |

@@ -8,7 +8,7 @@ java {
 
 dependencies {
     // Provided dependencies
-    compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("org.apache.logging.log4j:log4j-core:2.24.1") {
         because("Provided by Minecraft.")
     }
@@ -28,12 +28,12 @@ dependencies {
     implementation("org.bstats:bstats-bukkit:3.1.0")
 
     // Optional integrations
-    compileOnly("com.palmergames.bukkit.towny:towny:0.101.2.5")
-    compileOnly("net.coreprotect:coreprotect:23.0")
+    compileOnly("com.palmergames.bukkit.towny:towny:0.102.0.7")
+    compileOnly("net.coreprotect:coreprotect:23.1")
     compileOnly("com.github.Slimefun:Slimefun4:RC-37")
     compileOnly("net.alex9849.advancedregionmarket:advancedregionmarket:3.5.5")
-    compileOnly("me.clip:placeholderapi:2.11.6")
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.14")
+    compileOnly("me.clip:placeholderapi:2.12.2")
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.15")
 }
 
 tasks {
