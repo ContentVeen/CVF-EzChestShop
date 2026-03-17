@@ -9,6 +9,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import me.deadlight.ezchestshop.EzChestShop;
 import me.deadlight.ezchestshop.utils.NmsHandle;
+import me.deadlight.ezchestshop.utils.Utils;
 import me.deadlight.ezchestshop.utils.SignMenuFactory;
 import me.deadlight.ezchestshop.utils.UpdateSignListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
@@ -51,6 +52,7 @@ public final class NmsHandleImpl implements NmsHandle {
 
     @Override
     public void spawnHologram(Player player, Location location, String line, int id) {
+        if (Utils.getLoadedWorld(location) == null) return;
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer ServerPlayer = craftPlayer.getHandle();
         ServerGamePacketListenerImpl ServerGamePacketListenerImpl = ServerPlayer.connection;
@@ -79,6 +81,7 @@ public final class NmsHandleImpl implements NmsHandle {
 
     @Override
     public void spawnFloatingItem(Player player, Location location, ItemStack itemStack, int id) {
+        if (Utils.getLoadedWorld(location) == null) return;
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer ServerPlayer = craftPlayer.getHandle();
         ServerGamePacketListenerImpl ServerGamePacketListenerImpl = ServerPlayer.connection;
@@ -122,6 +125,7 @@ public final class NmsHandleImpl implements NmsHandle {
 
     @Override
     public void teleportEntity(Player player, int entityId, Location location) {
+        if (Utils.getLoadedWorld(location) == null) return;
         ServerPlayer ServerPlayer = ((CraftPlayer) player).getHandle();
         Entity e = entities.get(entityId);
         e.teleportTo(((CraftWorld) location.getWorld()).getHandle(), location.getX(), location.getY(), location.getZ(), new HashSet<>(), 0, 0, false);
@@ -186,6 +190,7 @@ public final class NmsHandleImpl implements NmsHandle {
 
     @Override
     public void showOutline(Player player, Block block, int entityId) {
+        if (Utils.getLoadedWorld(block.getLocation()) == null) return;
         ServerLevel ServerLevel = ((CraftWorld) block.getLocation().getWorld()).getHandle();
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer ServerPlayer = craftPlayer.getHandle();

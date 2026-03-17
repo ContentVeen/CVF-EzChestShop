@@ -100,6 +100,26 @@ public final class Utils {
     private static final AtomicBoolean WARN_ON_ENTITY_ID_EXCEPTION = new AtomicBoolean();
 
     /**
+     * Safely retrieve the World from a Location without throwing an exception.
+     * On modern Paper-based servers, {@link Location#getWorld()} throws
+     * {@link IllegalArgumentException} when the world has been unloaded
+     * (e.g. with AdvancedSlimePaper). This method catches that and returns null instead.
+     *
+     * @param location the location to get the world from
+     * @return the World, or null if the location is null or the world is unloaded
+     */
+    public static @Nullable World getLoadedWorld(@Nullable Location location) {
+        if (location == null) {
+            return null;
+        }
+        try {
+            return location.getWorld();
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    /**
      * UnsafeValues: Use this when sending custom packets, so that there are no collisions on the client or server.
      */
     public static int nextEntityId() {
@@ -232,8 +252,11 @@ public final class Utils {
     public static String LocationtoString(Location loc) {
         if (loc == null)
             return null;
+        World world = getLoadedWorld(loc);
+        if (world == null)
+            return null;
         String sloc = "";
-        sloc += ("W:" + loc.getWorld().getName() + ",");
+        sloc += ("W:" + world.getName() + ",");
         sloc += ("X:" + loc.getX() + ",");
         sloc += ("Y:" + loc.getY() + ",");
         sloc += ("Z:" + loc.getZ());
@@ -247,8 +270,11 @@ public final class Utils {
     public static String LocationRoundedtoString(Location loc, int decimals) {
         if (loc == null)
             return null;
+        World world = getLoadedWorld(loc);
+        if (world == null)
+            return null;
         String sloc = "";
-        sloc += ("W:" + loc.getWorld().getName() + ",");
+        sloc += ("W:" + world.getName() + ",");
         if (decimals <= 0) {
             sloc += ("X:" + (int) round(loc.getX(), decimals) + ",");
             sloc += ("Y:" + (int) round(loc.getY(), decimals) + ",");
@@ -919,7 +945,8 @@ public final class Utils {
             if (shop.getOwnerID().equals(player.getUniqueId()) || getAdminsForShop(shop).contains(player.getUniqueId())) {
                 //then we check if the shop is empty
 
-                if (shop.getLocation() == null || shop.getLocation().getWorld() == null) {
+                World shopWorld = getLoadedWorld(shop.getLocation());
+                if (shop.getLocation() == null || shopWorld == null) {
                     continue;
                 }
 
@@ -940,7 +967,7 @@ public final class Utils {
                     }
                 }
 
-                if (shop.getLocation().getWorld().equals(player.getWorld())) {
+                if (shopWorld.equals(player.getWorld())) {
                     if (shop.getLocation().distance(player.getLocation()) <= 80) {
                         emptyShops.add(shop.getLocation().getBlock());
                     }
