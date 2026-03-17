@@ -37,8 +37,9 @@ jobs:
           echo "SHORT_SHA=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_ENV
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
+          archive: false
           name: EzChestShopReborn-${{ env.VERSION }}
           path: |
             paper-plugin/build/libs/EzChestShopReborn-${{ env.VERSION }}.jar
