@@ -77,12 +77,25 @@ jobs:
             PLUGIN_NAME="${{ github.event.repository.name }}"
           fi
 
+          # Root project name (used to identify the shaded assembly jar deterministically).
+          ROOT_NAME=""
+          for sf in settings.gradle.kts settings.gradle; do
+            if [ -f "$sf" ]; then
+              ROOT_NAME=$(grep -E "rootProject\.name\s*=" "$sf" | head -n 1 | sed -E "s/.*=\s*['\"]([^'\"]+)['\"].*/\1/")
+              [ -n "$ROOT_NAME" ] && break
+            fi
+          done
+          if [ -z "$ROOT_NAME" ]; then
+            ROOT_NAME="$PLUGIN_NAME"
+          fi
+
           echo "version_file=$VERSION_FILE" >> "$GITHUB_OUTPUT"
           echo "current_base=$BASE" >> "$GITHUB_OUTPUT"
           echo "release_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "next_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "plugin_name=$PLUGIN_NAME" >> "$GITHUB_OUTPUT"
+          echo "root_name=$ROOT_NAME" >> "$GITHUB_OUTPUT"
 
           echo "Version file:    $VERSION_FILE"
           echo "Current:         $BASE"
@@ -90,6 +103,7 @@ jobs:
           echo "Next snapshot:   $NEXT_VERSION"
           echo "Tag:             $TAG"
           echo "Plugin name:     $PLUGIN_NAME"
+          echo "Root name:       $ROOT_NAME"
 
       - name: Verify tag does not already exist
         run: |
@@ -104,6 +118,22 @@ jobs:
             exit 1
           fi
 
+      - name: Pin clean release version for build
+        run: |
+          set -euo pipefail
+          VERSION_FILE="${{ steps.version.outputs.version_file }}"
+          CURRENT="${{ steps.version.outputs.current_base }}"
+          RELEASE="${{ steps.version.outputs.release_version }}"
+          # Drop -SNAPSHOT before building so the root build script does not
+          # rewrite the version into "<base>-dev+<count>-<sha>".
+          sed -i -E "s|^(\s*version\s*=\s*['\"]?)${CURRENT}(['\"]?\s*)$|\1${RELEASE}\2|" "$VERSION_FILE"
+          if ! grep -qE "^\s*version\s*=\s*['\"]?${RELEASE}['\"]?\s*$" "$VERSION_FILE"; then
+            echo "::error::Failed to pin release version in $VERSION_FILE" >&2
+            grep -E "^\s*version" "$VERSION_FILE" || true
+            exit 1
+          fi
+          echo "Pinned $VERSION_FILE: $CURRENT -> $RELEASE (build only)"
+
       - name: Build
         run: gradle build --no-daemon --stacktrace --console=plain
 
@@ -112,35 +142,51 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-assets
+          ROOT_NAME="${{ steps.version.outputs.root_name }}"
+          RELEASE="${{ steps.version.outputs.release_version }}"
 
-          # A plugin jar is a jar whose top-level contents include plugin.yml.
-          # In this monorepo both the unshaded library jar (e.g. core-X.Y.jar) and
-          # the shaded assembly jar (e.g. EzChestShopReborn-X.Y.jar) contain plugin.yml;
-          # we ship the largest one, which is the shaded/runnable artifact.
           shopt -s nullglob globstar
-          BEST=""
-          BEST_SIZE=0
-          for jar in **/build/libs/*.jar; do
-            case "$jar" in
-              *-sources.jar|*-javadoc.jar) continue ;;
-            esac
-            if unzip -l "$jar" 2>/dev/null | awk '{print $NF}' | grep -qx "plugin.yml"; then
-              size=$(stat -c%s "$jar")
-              echo "  candidate: $jar ($size bytes)"
-              if [ "$size" -gt "$BEST_SIZE" ]; then
-                BEST="$jar"
-                BEST_SIZE=$size
-              fi
-            fi
+
+          # Preferred: deterministic shaded assembly jar named "<rootProject.name>-<version>.jar".
+          # Produced by the shadowJar task in the assembly subproject (here: paper-plugin).
+          declare -a MATCHES=()
+          for jar in **/build/libs/"${ROOT_NAME}-${RELEASE}.jar"; do
+            MATCHES+=("$jar")
           done
 
-          if [ -z "$BEST" ]; then
-            echo "::error::No jar containing plugin.yml was produced by the build." >&2
+          # Fallback: any jar whose top-level contents include plugin.yml. Pick the largest
+          # (the shaded jar dwarfs the unshaded library jar).
+          if [ ${#MATCHES[@]} -eq 0 ]; then
+            echo "No jar matched ${ROOT_NAME}-${RELEASE}.jar, falling back to plugin.yml heuristic."
+            BEST=""
+            BEST_SIZE=0
+            for jar in **/build/libs/*.jar; do
+              case "$jar" in
+                *-sources.jar|*-javadoc.jar) continue ;;
+              esac
+              if unzip -l "$jar" 2>/dev/null | awk '{print $NF}' | grep -qx "plugin.yml"; then
+                size=$(stat -c%s "$jar")
+                echo "  candidate: $jar ($size bytes)"
+                if [ "$size" -gt "$BEST_SIZE" ]; then
+                  BEST="$jar"
+                  BEST_SIZE=$size
+                fi
+              fi
+            done
+            [ -n "$BEST" ] && MATCHES=("$BEST")
+          fi
+
+          if [ ${#MATCHES[@]} -eq 0 ]; then
+            echo "::error::No plugin jar produced by the build." >&2
+            echo "Build output tree:" >&2
+            find . -path '*/build/libs/*.jar' -not -path './.git/*' >&2 || true
             exit 1
           fi
 
-          echo "Selected plugin jar: $BEST"
-          cp -v "$BEST" release-assets/
+          for jar in "${MATCHES[@]}"; do
+            echo "Selected plugin jar: $jar"
+            cp -v "$jar" release-assets/
+          done
           ls -la release-assets
 
       - name: Create GitHub Release
@@ -157,16 +203,16 @@ jobs:
         run: |
           set -euo pipefail
           VERSION_FILE="${{ steps.version.outputs.version_file }}"
-          CURRENT="${{ steps.version.outputs.current_base }}"
+          # The file currently holds the clean release version (set by the pin step).
+          PINNED="${{ steps.version.outputs.release_version }}"
           NEXT="${{ steps.version.outputs.next_version }}"
-          # Replace exactly the version line, preserving any quoting style.
-          sed -i -E "s|^(\s*version\s*=\s*['\"]?)${CURRENT}(['\"]?\s*)$|\1${NEXT}\2|" "$VERSION_FILE"
+          sed -i -E "s|^(\s*version\s*=\s*['\"]?)${PINNED}(['\"]?\s*)$|\1${NEXT}\2|" "$VERSION_FILE"
           if ! grep -qE "^\s*version\s*=\s*['\"]?${NEXT}['\"]?\s*$" "$VERSION_FILE"; then
             echo "::error::Failed to bump version in $VERSION_FILE" >&2
             grep -E "^\s*version" "$VERSION_FILE" || true
             exit 1
           fi
-          echo "Bumped $VERSION_FILE: $CURRENT -> $NEXT"
+          echo "Bumped $VERSION_FILE: $PINNED -> $NEXT"
 
       - name: Commit and push version bump
         run: |
