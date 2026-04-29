@@ -2,6 +2,7 @@ package me.deadlight.ezchestshop.data.mysql;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -164,21 +165,36 @@ public class MySQL extends DatabaseManager {
 
     @Override
     public void insertShop(String sloc, String owner, String item, double buyprice, double sellprice, boolean msgtoggle, boolean dbuy, boolean dsell, String admins, boolean shareincome, boolean adminshop, String rotation, List<String> customMessages) {
-        EzChestShop.getScheduler().runTaskAsynchronously(() -> this.shopdata.pushRow(
-                sloc,
-                owner,
-                item,
-                buyprice,
-                sellprice,
-                msgtoggle,
-                dbuy,
-                dsell,
-                admins,
-                shareincome,
-                adminshop,
-                rotation,
-                String.join("#,#", customMessages)
-        ));
+        String joinedCustomMessages = String.join("#,#", customMessages);
+        EzChestShop.getScheduler().runTaskAsynchronously(() -> {
+            String sql = "INSERT INTO " + shopdata.getName() + " (`location`,`owner`,`item`,`buyPrice`,`sellPrice`,"
+                    + "`msgToggle`,`buyDisabled`,`sellDisabled`,`admins`,`shareIncome`,`adminshop`,`rotation`,`customMessages`) "
+                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) "
+                    + "ON DUPLICATE KEY UPDATE `owner`=VALUES(`owner`),`item`=VALUES(`item`),"
+                    + "`buyPrice`=VALUES(`buyPrice`),`sellPrice`=VALUES(`sellPrice`),`msgToggle`=VALUES(`msgToggle`),"
+                    + "`buyDisabled`=VALUES(`buyDisabled`),`sellDisabled`=VALUES(`sellDisabled`),`admins`=VALUES(`admins`),"
+                    + "`shareIncome`=VALUES(`shareIncome`),`adminshop`=VALUES(`adminshop`),`rotation`=VALUES(`rotation`),"
+                    + "`customMessages`=VALUES(`customMessages`)";
+            try (Connection connection = database.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, sloc);
+                statement.setString(2, owner);
+                statement.setString(3, item);
+                statement.setDouble(4, buyprice);
+                statement.setDouble(5, sellprice);
+                statement.setInt(6, msgtoggle ? 1 : 0);
+                statement.setInt(7, dbuy ? 1 : 0);
+                statement.setInt(8, dsell ? 1 : 0);
+                statement.setString(9, admins);
+                statement.setInt(10, shareincome ? 1 : 0);
+                statement.setInt(11, adminshop ? 1 : 0);
+                statement.setString(12, rotation);
+                statement.setString(13, joinedCustomMessages);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                EzChestShop.logger().warn("Caught an SQLException", e);
+            }
+        });
     }
 
     @Override
