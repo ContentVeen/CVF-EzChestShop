@@ -943,18 +943,34 @@ public final class Utils {
             }
 
             if (shop.getOwnerID().equals(player.getUniqueId()) || getAdminsForShop(shop).contains(player.getUniqueId())) {
-                //then we check if the shop is empty
-
-                World shopWorld = getLoadedWorld(shop.getLocation());
-                if (shop.getLocation() == null || shopWorld == null) {
+                Location shopLocation = shop.getLocation();
+                World shopWorld = getLoadedWorld(shopLocation);
+                if (shopLocation == null || shopWorld == null) {
                     continue;
                 }
 
-                if (!Utils.isApplicableContainer(shop.getLocation().getBlock())) {
+                // Cheap checks first: only nearby shops in the player's world are relevant.
+                // Doing these before touching the block avoids force-loading chunks (which can
+                // throw if the chunk system is shutting down).
+                if (!shopWorld.equals(player.getWorld())) {
+                    continue;
+                }
+                if (shopLocation.distance(player.getLocation()) > 80) {
                     continue;
                 }
 
-                Inventory inventory = Utils.getBlockInventory(shop.getLocation().getBlock());
+                // Don't access the block in an unloaded chunk; getType()/getState() would trigger
+                // a synchronous chunk load and crash during shutdown.
+                if (!shopWorld.isChunkLoaded(shopLocation.getBlockX() >> 4, shopLocation.getBlockZ() >> 4)) {
+                    continue;
+                }
+
+                Block shopBlock = shopLocation.getBlock();
+                if (!Utils.isApplicableContainer(shopBlock)) {
+                    continue;
+                }
+
+                Inventory inventory = Utils.getBlockInventory(shopBlock);
                 if (inventory == null) {
                     continue;
                 }
@@ -967,11 +983,7 @@ public final class Utils {
                     }
                 }
 
-                if (shopWorld.equals(player.getWorld())) {
-                    if (shop.getLocation().distance(player.getLocation()) <= 80) {
-                        emptyShops.add(shop.getLocation().getBlock());
-                    }
-                }
+                emptyShops.add(shopBlock);
             }
         }
 
