@@ -40,10 +40,21 @@ dependencyResolutionManagement {
             }
         }
 
-//      maven("https://nexus.alex9849.net/repository/maven-releases/") {
-        maven("https://maven.nouish.no/repository/maven-releases/") {
-            content {
-                includeGroup("net.alex9849.advancedregionmarket")
+        // AdvancedRegionMarket is no longer reliably hosted on a Maven repository
+        // (the upstream nexus.alex9849.net is gone and the maven.nouish.no mirror has
+        // been returning 5xx errors). Resolve the artifact straight from the GitHub
+        // release instead, where it is published as a plain jar.
+        exclusiveContent {
+            forRepository {
+                ivy("https://github.com/alex9849/advanced-region-market/releases/download/") {
+                    patternLayout {
+                        artifact("[revision]/[module]-[revision].jar")
+                    }
+                    metadataSources { artifact() }
+                }
+            }
+            filter {
+                includeModule("net.alex9849.advancedregionmarket", "advancedregionmarket")
             }
         }
 
