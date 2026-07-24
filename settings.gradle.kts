@@ -34,14 +34,30 @@ dependencyResolutionManagement {
             }
         }
 
-        maven("https://repo.glaremasters.me/repository/towny/") {
+        // Towny's own repository (repo.glaremasters.me) has proven unreliable, so
+        // the release jar is taken straight from GitHub instead.
+        ivy("https://github.com/TownyAdvanced/Towny/releases/download") {
+            patternLayout {
+                artifact("[revision]/[module]-[revision].[ext]")
+            }
+            metadataSources {
+                artifact()
+            }
             content {
                 includeGroup("com.palmergames.bukkit.towny")
             }
         }
 
-//      maven("https://nexus.alex9849.net/repository/maven-releases/") {
-        maven("https://maven.nouish.no/repository/maven-releases/") {
+        // AdvancedRegionMarket is no longer published to a Maven repository we can
+        // rely on: nexus.alex9849.net is gone and maven.nouish.no is unreliable.
+        // The upstream project does still attach the jar to its GitHub releases.
+        ivy("https://github.com/alex9849/advanced-region-market/releases/download") {
+            patternLayout {
+                artifact("[revision]/[module]-[revision].[ext]")
+            }
+            metadataSources {
+                artifact()
+            }
             content {
                 includeGroup("net.alex9849.advancedregionmarket")
             }
