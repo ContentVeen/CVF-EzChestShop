@@ -10,8 +10,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.jetbrains.annotations.NotNull;
@@ -19,14 +21,51 @@ import org.jetbrains.annotations.NotNull;
 public class ChestShopBreakPrevention implements Listener {
 
     //BlockBreak of this section is handled in BlockBreakListener.java
+
+    /**
+     * Entity driven explosions, such as TNT, creepers, end crystals,
+     * ghast fireballs, wither skulls and the ender dragon.
+     */
     @EventHandler
     public void onExplosion(EntityExplodeEvent event) {
         if (!Config.shopProtection) {
             return;
         }
 
-        event.blockList().removeIf(block -> ShopContainer.isShop(block.getLocation()));
-        event.blockList().removeIf(block -> Utils.isPartOfTheChestShop(block) != null);
+        event.blockList().removeIf(ChestShopBreakPrevention::isProtected);
+    }
+
+    /**
+     * Block driven explosions, such as beds detonating outside of the overworld
+     * and respawn anchors detonating outside of the nether. These do not have a
+     * source entity and therefore never reach {@link #onExplosion(EntityExplodeEvent)}.
+     */
+    @EventHandler
+    public void onExplosion(BlockExplodeEvent event) {
+        if (!Config.shopProtection) {
+            return;
+        }
+
+        event.blockList().removeIf(ChestShopBreakPrevention::isProtected);
+    }
+
+    /**
+     * Mobs that remove blocks without an explosion, most notably the wither
+     * clearing a path through anything that is not wither immune.
+     */
+    @EventHandler
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        if (!Config.shopProtection) {
+            return;
+        }
+
+        if (isProtected(event.getBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private static boolean isProtected(@NotNull Block block) {
+        return ShopContainer.isShop(block.getLocation()) || Utils.isPartOfTheChestShop(block) != null;
     }
 
     @EventHandler
@@ -45,7 +84,7 @@ public class ChestShopBreakPrevention implements Listener {
         if (!Config.shopProtection) {
             return;
         }
-        if (ShopContainer.isShop(event.getBlock().getLocation()) || Utils.isPartOfTheChestShop(event.getBlock()) != null) {
+        if (isProtected(event.getBlock())) {
             event.setCancelled(true);
         }
 
@@ -57,7 +96,7 @@ public class ChestShopBreakPrevention implements Listener {
             return;
         }
         for (Block block : event.getBlocks()) {
-            if (ShopContainer.isShop(block.getLocation()) || Utils.isPartOfTheChestShop(block) != null) {
+            if (isProtected(block)) {
                 event.setCancelled(true);
                 break;
             }
@@ -70,7 +109,7 @@ public class ChestShopBreakPrevention implements Listener {
             return;
         }
         for (Block block : event.getBlocks()) {
-            if (ShopContainer.isShop(block.getLocation()) || Utils.isPartOfTheChestShop(block) != null) {
+            if (isProtected(block)) {
                 event.setCancelled(true);
                 break;
             }
