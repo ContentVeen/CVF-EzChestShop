@@ -23,17 +23,17 @@ dependencies {
     // Shaded dependencies
     api("com.github.Anon8281:UniversalScheduler:0.1.7")
     implementation("de.themoep:minedown:1.7.1-SNAPSHOT")
-    implementation("com.zaxxer:HikariCP:7.0.2")
+    implementation("com.zaxxer:HikariCP:7.1.0")
     implementation("dev.triumphteam:triumph-gui:3.1.13")
     implementation("org.bstats:bstats-bukkit:3.2.1")
 
     // Optional integrations
-    compileOnly("com.palmergames.bukkit.towny:towny:0.102.0.14")
-    compileOnly("net.coreprotect:coreprotect:23.2")
+    compileOnly("com.palmergames.bukkit.towny:towny:0.103.0.7")
+    compileOnly("net.coreprotect:coreprotect:24.0")
     compileOnly("com.github.Slimefun:Slimefun4:RC-37")
     compileOnly("net.alex9849.advancedregionmarket:advancedregionmarket:3.5.5")
-    compileOnly("me.clip:placeholderapi:2.12.2")
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.16")
+    compileOnly("me.clip:placeholderapi:2.12.3")
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.17")
 }
 
 tasks {
